@@ -41,31 +41,54 @@ function App() {
   }, [showForm]);
 
   const recipeDetail = recipes.find((r) => r.id === selectedRecipe);
-
-  const handleDeleteRecipe = (id: number) => {
-    const dbRequest = indexedDB.open("recetasDB", 2);
-
-    dbRequest.onupgradeneeded = (event) => {
-      const target = event.target as IDBOpenDBRequest | null;
-      if (!target) return;
-      const db = target.result;
-      if (!db.objectStoreNames.contains("recetas")) {
-        db.createObjectStore("recetas", { keyPath: "id", autoIncrement: true });
-      }
-    };
-
-    dbRequest.onsuccess = (event) => {
-      const target = event.target as IDBOpenDBRequest | null;
-      if (!target) return;
-      const db = target.result;
-      if (!db.objectStoreNames.contains("recetas")) return;
-      const transaction = db.transaction("recetas", "readwrite");
-      const store = transaction.objectStore("recetas");
-      store.delete(id);
-      transaction.oncomplete = () => {
-        setRecipes((prev) => prev.filter((r) => r.id !== id));
-      };
-    };
+  const confirmAndDeleteRecipe = (id: number) => {
+    toast(
+      () => (
+        <div>
+          <span>¿Seguro que quieres borrar esta receta?</span>
+          <div className="flex gap-2 mt-2">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                toast.dismiss();
+                const dbRequest = indexedDB.open("recetasDB", 2);
+                dbRequest.onupgradeneeded = (event) => {
+                  const target = event.target as IDBOpenDBRequest | null;
+                  if (!target) return;
+                  const db = target.result;
+                  if (!db.objectStoreNames.contains("recetas")) {
+                    db.createObjectStore("recetas", {
+                      keyPath: "id",
+                      autoIncrement: true,
+                    });
+                  }
+                };
+                dbRequest.onsuccess = (event) => {
+                  const target = event.target as IDBOpenDBRequest | null;
+                  if (!target) return;
+                  const db = target.result;
+                  if (!db.objectStoreNames.contains("recetas")) return;
+                  const transaction = db.transaction("recetas", "readwrite");
+                  const store = transaction.objectStore("recetas");
+                  store.delete(id);
+                  transaction.oncomplete = () => {
+                    setRecipes((prev) => prev.filter((r) => r.id !== id));
+                    toast.success("Receta borrada");
+                  };
+                };
+              }}
+            >
+              Sí, borrar
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => toast.dismiss()}>
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ),
+      { duration: 8000 }
+    );
   };
 
   const exportRecipe = () => {
@@ -138,34 +161,42 @@ function App() {
               <AddNewRecipe onClose={() => setShowForm(false)} />
             </SheetContent>
           </Sheet>
-          <div className="w-full mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recipes.map((recipe) => (
-              <Card
-                key={recipe.id}
-                className="cursor-pointer hover:shadow-lg transition relative"
-                onClick={() => setSelectedRecipe(recipe.id)}
-              >
-                <CardHeader>
-                  <CardTitle>{recipe.title}</CardTitle>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-4 right-4"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteRecipe(recipe.id);
-                    }}
-                  >
-                    Borrar
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <span className="text-sm text-muted-foreground">
-                    {recipe.ingredients.length} ingredientes
-                  </span>
-                </CardContent>
-              </Card>
-            ))}
+          <div
+            className="w-full mt-8 p-2"
+            style={{
+              maxHeight: "60vh",
+              overflowY: "auto",
+            }}
+          >
+            <div className="w-full mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+              {recipes.map((recipe) => (
+                <Card
+                  key={recipe.id}
+                  className="cursor-pointer hover:shadow-lg transition relative"
+                  onClick={() => setSelectedRecipe(recipe.id)}
+                >
+                  <CardHeader>
+                    <CardTitle>{recipe.title}</CardTitle>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-4 right-4"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        confirmAndDeleteRecipe(recipe.id);
+                      }}
+                    >
+                      Borrar
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <span className="text-sm text-muted-foreground">
+                      {recipe.ingredients.length} ingredientes
+                    </span>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
           <Sheet
             open={selectedRecipe !== null}
