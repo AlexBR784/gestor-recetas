@@ -44,6 +44,16 @@ function App() {
 
   const handleDeleteRecipe = (id: number) => {
     const dbRequest = indexedDB.open("recetasDB", 1);
+
+    dbRequest.onupgradeneeded = (event) => {
+      const target = event.target as IDBOpenDBRequest | null;
+      if (!target) return;
+      const db = target.result;
+      if (!db.objectStoreNames.contains("recetas")) {
+        db.createObjectStore("recetas", { keyPath: "id", autoIncrement: true });
+      }
+    };
+
     dbRequest.onsuccess = (event) => {
       const target = event.target as IDBOpenDBRequest | null;
       if (!target) return;
@@ -81,6 +91,19 @@ function App() {
       const imported = JSON.parse(text);
       if (!Array.isArray(imported)) throw new Error("Formato inválido");
       const dbRequest = indexedDB.open("recetasDB", 1);
+
+      dbRequest.onupgradeneeded = (event) => {
+        const target = event.target as IDBOpenDBRequest | null;
+        if (!target) return;
+        const db = target.result;
+        if (!db.objectStoreNames.contains("recetas")) {
+          db.createObjectStore("recetas", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+        }
+      };
+
       dbRequest.onsuccess = (event) => {
         const target = event.target as IDBOpenDBRequest | null;
         if (!target) return;
