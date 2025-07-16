@@ -10,7 +10,7 @@ Aplicación web para gestionar recetas de cocina. Permite crear, visualizar, bor
 - [shadcn/ui](https://ui.shadcn.com/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
-- [Sonner](https://sonner.emilkowal.dev/) (notificaciones)
+- [Sonner](https://www.npmjs.com/package/sonner) (notificaciones)
 
 ## Funcionalidades
 
