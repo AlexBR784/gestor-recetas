@@ -15,7 +15,7 @@ function App() {
   const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
 
   useEffect(() => {
-    const dbRequest = indexedDB.open("recetasDB", 1);
+    const dbRequest = indexedDB.open("recetasDB", 2);
 
     dbRequest.onupgradeneeded = (event) => {
       const target = event.target as IDBOpenDBRequest | null;
@@ -43,7 +43,7 @@ function App() {
   const recipeDetail = recipes.find((r) => r.id === selectedRecipe);
 
   const handleDeleteRecipe = (id: number) => {
-    const dbRequest = indexedDB.open("recetasDB", 1);
+    const dbRequest = indexedDB.open("recetasDB", 2);
 
     dbRequest.onupgradeneeded = (event) => {
       const target = event.target as IDBOpenDBRequest | null;
@@ -90,7 +90,7 @@ function App() {
     try {
       const imported = JSON.parse(text);
       if (!Array.isArray(imported)) throw new Error("Formato inválido");
-      const dbRequest = indexedDB.open("recetasDB", 1);
+      const dbRequest = indexedDB.open("recetasDB", 2);
 
       dbRequest.onupgradeneeded = (event) => {
         const target = event.target as IDBOpenDBRequest | null;

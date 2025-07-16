@@ -59,7 +59,7 @@ export default function AddNewRecipe({ onClose }: AddNewRecipeProps) {
       return;
     }
 
-    const dbRequest = indexedDB.open("recetasDB", 1);
+    const dbRequest = indexedDB.open("recetasDB", 2);
 
     dbRequest.onupgradeneeded = (event) => {
       const target = event.target as IDBOpenDBRequest | null;
