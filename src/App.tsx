@@ -16,10 +16,21 @@ function App() {
 
   useEffect(() => {
     const dbRequest = indexedDB.open("recetasDB", 1);
+
+    dbRequest.onupgradeneeded = (event) => {
+      const target = event.target as IDBOpenDBRequest | null;
+      if (!target) return;
+      const db = target.result;
+      if (!db.objectStoreNames.contains("recetas")) {
+        db.createObjectStore("recetas", { keyPath: "id", autoIncrement: true });
+      }
+    };
+
     dbRequest.onsuccess = (event) => {
       const target = event.target as IDBOpenDBRequest | null;
       if (!target) return;
       const db = target.result;
+      if (!db.objectStoreNames.contains("recetas")) return;
       const transaction = db.transaction("recetas", "readonly");
       const store = transaction.objectStore("recetas");
       const getAllRequest = store.getAll();
