@@ -10,21 +10,29 @@ import {
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { generateRecipeJSON } from "@/lib/generateRecipeJSON";
-import type { Ingredient } from "@/lib/generateRecipeJSON";
+import type { Ingredient, Recipe } from "@/lib/generateRecipeJSON";
 import { Textarea } from "./ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 interface AddNewRecipeProps {
   onClose: () => void;
+  initialRecipe?: Recipe | null;
+  onSaveEdit?: (recipe: Recipe) => void;
 }
 
-export default function AddNewRecipe({ onClose }: AddNewRecipeProps) {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([
-    { name: "", specification: 1, unit: "uds" },
-  ]);
-  const [recipeName, setRecipeName] = useState("");
-  const [recipeDescription, setRecipeDescription] = useState("");
+export default function AddNewRecipe({
+  onClose,
+  initialRecipe,
+  onSaveEdit,
+}: AddNewRecipeProps) {
+  const [ingredients, setIngredients] = useState<Ingredient[]>(
+    initialRecipe?.ingredients ?? [{ name: "", specification: 1, unit: "uds" }]
+  );
+  const [recipeName, setRecipeName] = useState(initialRecipe?.title ?? "");
+  const [recipeDescription, setRecipeDescription] = useState(
+    initialRecipe?.description ?? ""
+  );
 
   const handleIngredientChange = (
     index: number,
@@ -47,14 +55,23 @@ export default function AddNewRecipe({ onClose }: AddNewRecipeProps) {
   };
 
   const onSave = () => {
-    const recipe = generateRecipeJSON(
-      recipeName,
-      ingredients,
-      recipeDescription
+    const filteredIngredients = ingredients.filter(
+      (ing) => ing.name && ing.name.trim() !== ""
     );
-    console.log("Receta generada:", recipe);
 
-    if (recipe == null) {
+    if (onSaveEdit && initialRecipe) {
+      // Editar receta
+      const updatedRecipe: Recipe = {
+        ...initialRecipe,
+        title: recipeName,
+        ingredients: filteredIngredients,
+        description: recipeDescription,
+      };
+      onSaveEdit(updatedRecipe);
+      return;
+    }
+
+    if (filteredIngredients.length === 0) {
       toast.error("Por favor, añade al menos un ingrediente válido.");
       return;
     }
@@ -82,7 +99,7 @@ export default function AddNewRecipe({ onClose }: AddNewRecipeProps) {
       const store = transaction.objectStore("recetas");
       store.add({
         title: recipeName,
-        ingredients,
+        ingredients: filteredIngredients,
         description: recipeDescription,
       });
       onClose(); // Cierra el Sheet al guardar
@@ -178,7 +195,7 @@ export default function AddNewRecipe({ onClose }: AddNewRecipeProps) {
       </div>
       <SheetFooter className="bg-white pt-2 pb-4 sticky bottom-0">
         <Button onClick={onSave} className="w-full">
-          Añadir receta
+          {initialRecipe ? "Guardar cambios" : "Añadir receta"}
         </Button>
         <SheetClose asChild>
           <Button

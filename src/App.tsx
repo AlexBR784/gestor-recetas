@@ -13,6 +13,7 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
+  const [editRecipe, setEditRecipe] = useState<Recipe | null>(null);
 
   useEffect(() => {
     const dbRequest = indexedDB.open("recetasDB", 2);
@@ -134,7 +135,7 @@ function App() {
         if (!db.objectStoreNames.contains("recetas")) return;
         const transaction = db.transaction("recetas", "readwrite");
         const store = transaction.objectStore("recetas");
-        imported.forEach((receta: any) => {
+        imported.forEach((receta: Recipe) => {
           const { id, ...rest } = receta;
           store.add(rest);
         });
@@ -148,6 +149,33 @@ function App() {
     }
   };
 
+  const handleEditRecipe = (recipe: Recipe) => {
+    setEditRecipe(recipe);
+    setShowForm(true);
+  };
+
+  const handleSaveEditedRecipe = (updatedRecipe: Recipe) => {
+    const dbRequest = indexedDB.open("recetasDB", 2);
+    dbRequest.onsuccess = (event) => {
+      const target = event.target as IDBOpenDBRequest | null;
+      if (!target) return;
+      const db = target.result;
+      if (!db.objectStoreNames.contains("recetas")) return;
+      const transaction = db.transaction("recetas", "readwrite");
+      const store = transaction.objectStore("recetas");
+      store.put(updatedRecipe);
+      transaction.oncomplete = () => {
+        setShowForm(false);
+        setEditRecipe(null);
+        toast.success("Receta actualizada");
+        // Actualiza el estado local
+        setRecipes((prev) =>
+          prev.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r))
+        );
+      };
+    };
+  };
+
   return (
     <>
       <div className="container mx-auto">
@@ -155,10 +183,25 @@ function App() {
           <h1 className="text-3xl font-bold text-center">Gestor de Recetas</h1>
           <Sheet open={showForm} onOpenChange={setShowForm}>
             <SheetTrigger asChild>
-              <Button className="px-6 py-3">Añadir Nueva Receta</Button>
+              <Button
+                className="px-6 py-3"
+                onClick={() => {
+                  setEditRecipe(null); // Limpia el estado de edición
+                  setShowForm(true); // Abre el formulario
+                }}
+              >
+                Añadir Nueva Receta
+              </Button>
             </SheetTrigger>
             <SheetContent side="right" className="max-w-lg w-full">
-              <AddNewRecipe onClose={() => setShowForm(false)} />
+              <AddNewRecipe
+                onClose={() => {
+                  setShowForm(false);
+                  setEditRecipe(null);
+                }}
+                initialRecipe={editRecipe}
+                onSaveEdit={handleSaveEditedRecipe}
+              />
             </SheetContent>
           </Sheet>
           <div
@@ -178,6 +221,17 @@ function App() {
                   <CardHeader>
                     <CardTitle>{recipe.title}</CardTitle>
                     <Button
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-4 right-20 mr-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditRecipe(recipe);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
                       variant="destructive"
                       size="sm"
                       className="absolute top-4 right-4"
@@ -191,7 +245,12 @@ function App() {
                   </CardHeader>
                   <CardContent>
                     <span className="text-sm text-muted-foreground">
-                      {recipe.ingredients.length} ingredientes
+                      {
+                        recipe.ingredients.filter(
+                          (ing) => ing.name && ing.name.trim() !== ""
+                        ).length
+                      }{" "}
+                      ingredientes
                     </span>
                   </CardContent>
                 </Card>
