@@ -1,19 +1,54 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import AddNewRecipe from "./components/AddNewRecipe";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { Toaster, toast } from "sonner";
 
 import type { Recipe } from "./lib/generateRecipeJSON";
 import { Input } from "./components/ui/input";
 
+import { Pencil, Trash } from "lucide-react";
+
+function useDynamicTitleLength() {
+  const [maxLength, setMaxLength] = useState(30);
+
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth < 500) setMaxLength(12);
+      else if (window.innerWidth < 900) setMaxLength(20);
+      else setMaxLength(30);
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return maxLength;
+}
+
 function App() {
   const [showForm, setShowForm] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
   const [editRecipe, setEditRecipe] = useState<Recipe | null>(null);
+
+  const maxTitleLength = useDynamicTitleLength();
 
   useEffect(() => {
     const dbRequest = indexedDB.open("recetasDB", 2);
@@ -50,6 +85,7 @@ function App() {
           <div className="flex gap-2 mt-2">
             <Button
               variant="destructive"
+              className="cursor-pointer"
               size="sm"
               onClick={() => {
                 toast.dismiss();
@@ -82,7 +118,12 @@ function App() {
             >
               Sí, borrar
             </Button>
-            <Button variant="outline" size="sm" onClick={() => toast.dismiss()}>
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              size="sm"
+              onClick={() => toast.dismiss()}
+            >
               Cancelar
             </Button>
           </div>
@@ -184,10 +225,10 @@ function App() {
           <Sheet open={showForm} onOpenChange={setShowForm}>
             <SheetTrigger asChild>
               <Button
-                className="px-6 py-3"
+                className="px-6 py-3 cursor-pointer"
                 onClick={() => {
-                  setEditRecipe(null); // Limpia el estado de edición
-                  setShowForm(true); // Abre el formulario
+                  setEditRecipe(null);
+                  setShowForm(true);
                 }}
               >
                 Añadir Nueva Receta
@@ -205,56 +246,61 @@ function App() {
             </SheetContent>
           </Sheet>
           <div
-            className="w-full mt-8 p-2"
-            style={{
-              maxHeight: "60vh",
-              overflowY: "auto",
-            }}
+            className="w-full mt-8 p-2 flex justify-center"
+            style={{ maxHeight: "60vh", overflowY: "auto" }}
           >
-            <div className="w-full mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-              {recipes.map((recipe) => (
-                <Card
-                  key={recipe.id}
-                  className="cursor-pointer hover:shadow-lg transition relative"
-                  onClick={() => setSelectedRecipe(recipe.id)}
-                >
-                  <CardHeader>
-                    <CardTitle>{recipe.title}</CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="absolute top-4 right-20 mr-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditRecipe(recipe);
-                      }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-4 right-4"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        confirmAndDeleteRecipe(recipe.id);
-                      }}
-                    >
-                      Borrar
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <span className="text-sm text-muted-foreground">
-                      {
-                        recipe.ingredients.filter(
-                          (ing) => ing.name && ing.name.trim() !== ""
-                        ).length
-                      }{" "}
-                      ingredientes
-                    </span>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="w-full max-w-4xl">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre</TableHead>
+
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recipes.map((recipe) => (
+                    <TableRow key={recipe.id}>
+                      <TableCell className="cursor-pointer font-semibold truncate max-w-[100px] overflow-hidden">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span
+                              className="text-xs cursor-pointer"
+                              onClick={() => setSelectedRecipe(recipe.id)}
+                            >
+                              {recipe.title.length > maxTitleLength
+                                ? recipe.title.slice(0, maxTitleLength) + "..."
+                                : recipe.title}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>{recipe.title}</TooltipContent>
+                        </Tooltip>
+                        <Badge variant="destructive" className="ml-2">
+                          {recipe.ingredients.length}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="mr-2 cursor-pointer"
+                          onClick={() => handleEditRecipe(recipe)}
+                        >
+                          <Pencil />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          className="cursor-pointer"
+                          size="sm"
+                          onClick={() => confirmAndDeleteRecipe(recipe.id)}
+                        >
+                          <Trash />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
           <Sheet
@@ -271,20 +317,22 @@ function App() {
                     {recipeDetail.description}
                   </h3>
                   <ul className="list-disc pl-4">
-                    {recipeDetail.ingredients.map((ing, idx) => (
-                      <li key={idx}>
-                        {ing.name}
-                        {ing.specification ? ` (${ing.specification}` : ""}
-                        {ing.unit
-                          ? ` ${ing.unit})`
-                          : ing.specification
-                          ? ")"
-                          : ""}
-                      </li>
-                    ))}
+                    {recipeDetail.ingredients
+                      .filter((ing) => ing.name && ing.name.trim() !== "")
+                      .map((ing, idx) => (
+                        <li key={idx}>
+                          {ing.name}
+                          {ing.specification ? ` (${ing.specification}` : ""}
+                          {ing.unit
+                            ? ` ${ing.unit})`
+                            : ing.specification
+                            ? ")"
+                            : ""}
+                        </li>
+                      ))}
                   </ul>
                   <Button
-                    className="mt-6 w-full"
+                    className="mt-6 w-full cursor-pointer"
                     onClick={() => setSelectedRecipe(null)}
                   >
                     Cerrar
@@ -295,10 +343,9 @@ function App() {
           </Sheet>
         </div>
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-          <Button className="mr-2" onClick={exportRecipe}>
+          <Button className="mr-2 cursor-pointer" onClick={exportRecipe}>
             Exportar recetas
           </Button>
-
           <Input
             type="file"
             accept="application/json"
@@ -307,6 +354,7 @@ function App() {
             onChange={importRecipes}
           />
           <Button
+            className="cursor-pointer"
             variant="outline"
             onClick={() => document.getElementById("import-recipes")?.click()}
           >

@@ -186,20 +186,20 @@ export default function AddNewRecipe({
             type="button"
             variant="outline"
             onClick={handleAddIngredient}
-            className="w-full mb-2"
+            className="w-full mb-2 cursor-pointer"
           >
             + Añadir otro ingrediente
           </Button>
         </form>
       </div>
       <SheetFooter className="bg-white pt-2 pb-4 sticky bottom-0">
-        <Button onClick={onSave} className="w-full">
+        <Button onClick={onSave} className="w-full cursor-pointer">
           {initialRecipe ? "Guardar cambios" : "Añadir receta"}
         </Button>
         <SheetClose asChild>
           <Button
             variant="outline"
-            className="w-full mt-2"
+            className="w-full mt-2 cursor-pointer"
             onClick={onClose}
             type="button"
           >
