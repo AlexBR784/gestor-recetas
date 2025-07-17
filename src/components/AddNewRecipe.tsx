@@ -9,7 +9,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { generateRecipeJSON } from "@/lib/generateRecipeJSON";
 import type { Ingredient, Recipe } from "@/lib/generateRecipeJSON";
 import { Textarea } from "./ui/textarea";
 import { Separator } from "@/components/ui/separator";
